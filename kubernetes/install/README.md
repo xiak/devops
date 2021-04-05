@@ -1,18 +1,59 @@
 # 自动化安装高性能高可用 kubernetes 集群
 
 ## 目录
-- 第一步 规划好你的集群策略
+- 前提
+- 第一步 集群规划
 - 第二步 安装 Loadbalancer 集群
 - 第三步 安装独立的 ETCD 集群
 - 第四步 创建 kubernetes api 节点
 - 第五步 安装网络插件
 - 第六步 添加节点到创建好的集群中
 
-## 第一步 规划好你的集群策略
+## 前提
 
+1 下载 repo
 ```shell script
 git clone https://github.com/xiak/k8s-infra.git
 ```
+
+整个工程的目录结构如下
+
+```
+kubernetes
+  |- doc
+  |- install           (脚手架)
+  |- namespace         (一些常用的应用)
+  |- network           (ingress 插件)
+  |- storage           (后端存储)
+```
+
+2 本文将带领大家安装一个高可用的 `k8s` 集群, 最少需要 `11` 台机器(虚拟机或物理机都可以)
+
+|  类型   | 系统  |
+|  ----  | ----  |
+| etcd  | centos 7 min |
+| etcd  | centos 7 min |
+| etcd  | centos 7 min |
+| soft loadbalancer  | centos 7 min |
+| soft loadbalancer  | centos 7 min |
+| soft loadbalancer  | centos 7 min |
+| kubernetes master  | centos 7 min |
+| kubernetes master  | centos 7 min |
+| kubernetes master  | centos 7 min |
+| kubernetes worker  | centos 7 min |
+| kubernetes bastion  | centos 7 min |
+
+`3` 台 `k8s` 集群外 `etcd cluster`
+`3` 台由 `haproxy + keepalived` 组成的 `soft loadbalancer`
+`3` 台 `k8s master` 节点, 每台节点上分别包含 `kube-apiserver`, `kube-contorller-manager`, `kube-scheduler` 三个服务
+`1` 至少 `1` 台干活的节点 `k8s worker`
+`1` 台跳板机, 所有人访问集群, 必须通过此跳板机
+
+如果资源紧张, 可以去掉 `soft loadbalancer`, 可以把 `etcd` 和 `kubernetes master` 安装在同一台服务器上, 这种情况本文不作阐述
+
+> 接下来所有步骤默认目录都是 `kubernetes/install/`
+
+## 第一步 集群规划
 
 在脚本 `install-etc-hosts.sh` 中定义你的集群
 
@@ -54,6 +95,9 @@ EOF
 }
 ```
 
+除此之外, 集群会使用 `10.10.10.100` 作为 `loadbalancer` 的 ip, 在 `第二步` 中会用到
+
+
 ## 第二步 安装 Loadbalancer 集群
 
 在第一步中定义了三台主机来作为负载均衡的节点:
@@ -75,10 +119,10 @@ EOF
 10.10.10.8    k8s-master-3
 ```
 
-确保所有主机可以 ssh 访问, 并且配置好了 IP 和 主机名
+确保所有主机配置好了 IP 和 主机名
 
 
-创建一个 VIP (10.10.10.100) 作为 ETCD 和 Kubernetes 的外部访问接口:
+创建一个 `Loadbalancer IP=10.10.10.100` 作为 ETCD 和 Kubernetes 的外部访问接口:
 ```shell script
 install-slb.sh root password 10.10.10.100 ens160 "10.10.10.6 10.10.10.7 10.10.10.8" "10.10.10.3 10.10.10.4 10.10.10.5" 10.10.10.9 10.10.10.10 10.10.10.11
 ```
@@ -86,7 +130,10 @@ install-slb.sh root password 10.10.10.100 ens160 "10.10.10.6 10.10.10.7 10.10.10
 访问 https://10.10.10.100:8443 即可访问 kubernetes api servers
 访问 https://10.10.10.100:2379 即可访问 ETCD CLUSTER
 
+> NOTE: IP 地址 `10.10.10.100` 是一个 VIP, 而不是真实的一台服务器
+
 ## 第三步 安装独立的 ETCD 集群
+
 在第一步中定义了三台主机作为 etcd 集群
 ```shell script
 10.10.10.3    k8s-etcd-1
@@ -94,29 +141,31 @@ install-slb.sh root password 10.10.10.100 ens160 "10.10.10.6 10.10.10.7 10.10.10
 10.10.10.5    k8s-etcd-3
 ```
 
-创建一个 ETCD (version: 3.4.3) 集群, 用 VIP 10.10.10.100:2379 or cluster-vip.com:2379 来作为负载均衡节点
+创建一个 `ETCD (version: 3.4.3)` 集群, `kubernetes` 可以通过负载均衡器访问 `ETCD` 集群 `VIP 10.10.10.100:2379 or cluster-vip.com:2379`
 
 ```shell script
 install-etcd.sh root password 3.4.3 cluster-vip.com 10.10.10.100 /etc/etcd 10.10.10.3 10.10.10.4 10.10.10.5
 ```
-其中需要注意的是, 如果上某台服务器上曾经安装过 etcd, 则需要先卸载
-```shell script
-uninstall-etcd.sh root password /etc/etcd /usr/local/bin 10.10.10.3 10.10.10.4 10.10.10.5
-```
-再执行
-```shell script
-install-etcd.sh root password 3.4.3 cluster-vip.com 10.10.10.100 /etc/etcd 10.10.10.3 10.10.10.4 10.10.10.5
-```
 
-## 第四步 创建 kubernetes api 节点
-在第一步中定义了三台主机作为 kubernetes api server
+> 其中需要注意的是, 如果上某台服务器上曾经安装过 etcd, 则需要先卸载, 需执行如下命令
+> ```shell script
+> uninstall-etcd.sh root password /etc/etcd /usr/local/bin 10.10.10.3 10.10.10.4 10.10.10.5
+> ```
+> 卸载完成后再执行如下命令安装 `ETCD` 集群
+> ```shell script
+> install-etcd.sh root password 3.4.3 cluster-vip.com 10.10.10.100 /etc/etcd 10.10.10.3 10.10.10.4 10.10.10.5
+> ```
+
+## 第四步 创建 kubernetes master 节点
+
+在第一步中定义了三台主机作为 `kubernetes master`
 ```shell script
 10.10.10.6    k8s-master-1
 10.10.10.7    k8s-master-2
 10.10.10.8    k8s-master-3
 ```
 
-首先创建集群中第一台 kubernetes api server, 剩下的我们可以以后再添加
+首先创建集群中第一台 `kubernetes master`, 剩下的我们可以以后再添加
 
 - IP: 10.10.10.6
 - Role: master
@@ -134,14 +183,14 @@ install-etcd.sh root password 3.4.3 cluster-vip.com 10.10.10.100 /etc/etcd 10.10
 install-k8s.sh 10.10.10.6 root password 1.16.2 18.09.7 10.10.10.100:8443 10.10.10.100:2379 10.10.10.3 "" new master ipvs systemd hub.docker.com /etc/etcd/pki 10.10.10.9 10.10.10.10 10.10.10.11
 ```
 
-其中需要注意的是, 如果 10.10.10.6 上曾经安装过 kubernetes, 则需要先卸载
-```shell script
-uninstall-k8s.sh root password true true 10.10.10.6 10.10.10.7 10.10.10.8
-```
-再执行
-```shell script
-install-k8s.sh 10.10.10.6 root password 1.16.2 18.09.7 10.10.10.100:8443 10.10.10.100:2379 10.10.10.3 "" new master ipvs systemd hub.docker.com /etc/etcd/pki 10.10.10.9 10.10.10.10 10.10.10.11
-```
+> 其中需要注意的是, 如果 10.10.10.6 上曾经安装过 kubernetes, 则需要先卸载
+> ```shell script
+> uninstall-k8s.sh root password true true 10.10.10.6 10.10.10.7 10.10.10.8
+> ```
+> 再执行
+> ```shell script
+> install-k8s.sh 10.10.10.6 root password 1.16.2 18.09.7 10.10.10.100:8443 10.10.10.100:2379 10.10.10.3 "" new master ipvs systemd hub.docker.com /etc/etcd/pki 10.10.10.9 10.10.10.10 10.10.10.11
+> ```
 
 ## 第五步 安装网络插件
 
@@ -153,10 +202,12 @@ calico 插件用到了 ETCD 集群, 我们需要再看下创建好的 ETCD 集�
 10.10.10.5    k8s-etcd-3
 ```
 
-我们可以执行命令来安装 calico 插件，其中 calico-template.yaml 为配置文件模板, https://10.10.10.100:2379 为 ETCD 负载均衡 VIP 节点
+安装 calico 网络插件
+
+> 其中 `calico-template.yaml` 为配置文件模板, `https://10.10.10.100:2379` 为 `ETCD` 负载均衡地址
 
 ```shell script
-install-calico.sh 10.10.10.3 root password https://10.10.10.3:2379,https://10.10.10.4:2379,https://10.10.10.5:2379 /etc/etcd/pki 10.10.0.0/24 calico-template.yaml
+install-calico.sh 10.10.10.3 root password https://10.10.10.100:2379 /etc/etcd/pki 10.10.0.0/24 calico-template.yaml
 ```
 
 如果不使用负载均衡 VIP 节点， 也可以使用如下命令安装 calico
@@ -165,28 +216,36 @@ install-calico.sh 10.10.10.3 root password https://10.10.10.3:2379,https://10.10
 ```
 
 ## 第六步 添加节点到创建好的集群中
+
 在`第四步`中, 我们创建好了第一台 kubernetes 节点
 
 现在我们会把一台 kubernetes 控制节点和一台工作节点加入到集群中
+
 ```shell script
 10.10.10.7    k8s-master-2
 10.10.10.23   k8s-worker-1
 ```
-控制节点加入集群
+
+### 控制节点加入集群
+
 ```shell script
 install-k8s.sh 10.10.10.7 root password 1.16.2 18.09.7 10.10.10.100:8443 10.10.10.100:2379 etcd-first-node.com k8s-first-node.com join master ipvs hub.docker.com /etc/etcd/pki 10.10.10.9 10.10.10.10 10.10.10.11
 ```
-工作节点加入集群
+
+### 工作节点加入集群
+
 ```shell script
 install-k8s.sh 10.10.10.23 root password 1.16.2 18.09.7 10.10.10.100:8443 10.10.10.100:2379 etcd-first-node.com k8s-first-node.com join worker ipvs hub.docker.com /etc/etcd/pki 10.10.10.9 10.10.10.10 10.10.10.11
 ```
-注意: etcd-first-node.com 表示任意一台 etcd 节点的ip (10.10.10.3 or ...),  k8s-first-node.com 表示集群中的某一个控制节点的ip (可选集群第一个节点 10.10.10.6)
 
-知道了如何添加控制节点和工作节点后, 我们可以依葫芦画瓢把所有的节点都加入到集群中了
+> NOTE: `etcd-first-node.com` 表示任意的一台 `etcd` 节点的 `ip` (10.10.10.3 or ...),  `k8s-first-node.com` 表示集群中的任意 `kubernetes master` 节点的 `ip` (可选集群第一个节点 10.10.10.6)
+
 
 ## 结语
 
-至此我们的一个高可用 kubernetes 集群搭建完毕，如果大家有什么意见或者建议，请提 issue 或则 pr
+至此我们的一个高可用 kubernetes 集群搭建完毕，如果大家有什么意见或者建议，请提 `pr` , 如发现 `bug` 请提交 `issue`
+
+联系方式: `x@xiak.com`
 
 
 
