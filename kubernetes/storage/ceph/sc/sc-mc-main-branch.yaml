@@ -9,7 +9,7 @@ metadata:
   name: sc-mc-main-branch
 provisioner: kubernetes.io/rbd
 parameters:
-  monitors: 10.98.151.55:6789,10.98.151.56:6789,10.98.151.65:6789
+  monitors: 10.10.10.101:6789,10.10.10.102:6789,10.10.10.103:6789
   pool: av.rbd
   adminId: admin
   adminSecretName: ceph-admin-secret

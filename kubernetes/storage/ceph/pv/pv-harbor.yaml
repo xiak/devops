@@ -14,9 +14,9 @@ spec:
     - ReadWriteOnce
   rbd:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     pool: av.rbd
     image: harbor.registry
     user: admin
@@ -43,9 +43,9 @@ spec:
     - ReadWriteOnce
   rbd:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     pool: av.rbd
     image: harbor.chart
     user: admin
@@ -72,9 +72,9 @@ spec:
     - ReadWriteOnce
   rbd:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     pool: av.rbd
     image: harbor.job
     user: admin
@@ -101,9 +101,9 @@ spec:
     - ReadWriteOnce
   rbd:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     pool: av.rbd
     image: harbor.db
     user: admin
@@ -130,9 +130,9 @@ spec:
     - ReadWriteOnce
   rbd:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     pool: av.rbd
     image: harbor.redis
     user: admin
@@ -159,9 +159,9 @@ spec:
     - ReadWriteOnce
   rbd:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     pool: av.rbd
     image: harbor.trivy
     user: admin

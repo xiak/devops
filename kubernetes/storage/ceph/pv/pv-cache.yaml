@@ -15,9 +15,9 @@ spec:
     - ReadWriteMany
   cephfs:
     monitors:
-      - 10.98.151.55:6789
-      - 10.98.151.65:6789
-      - 10.98.151.66:6789
+      - 10.10.10.101:6789
+      - 10.10.10.102:6789
+      - 10.10.10.102:6789
     path: /cache/npm
     user: admin
     secretRef:
@@ -43,9 +43,9 @@ spec:
     - ReadWriteMany
   cephfs:
     monitors:
-      - 10.98.151.55:6789
+      - 10.10.10.101:6789
       - 10.98.151.56:6789
-      - 10.98.151.65:6789
+      - 10.10.10.102:6789
     path: /cache/mvn/code
     user: admin
     secretRef:
@@ -70,9 +70,9 @@ spec:
     - ReadWriteMany
   cephfs:
     monitors:
-      - 10.98.151.55:6789
+      - 10.10.10.101:6789
       - 10.98.151.56:6789
-      - 10.98.151.65:6789
+      - 10.10.10.102:6789
     path: /cache/mvn/all
     user: admin
     secretRef:
@@ -97,9 +97,9 @@ spec:
         - ReadWriteMany
       cephfs:
         monitors:
-          - 10.98.151.55:6789
+          - 10.10.10.101:6789
           - 10.98.151.56:6789
-          - 10.98.151.65:6789
+          - 10.10.10.102:6789
         path: /cache/mvn/rpm
         user: admin
         secretRef:
@@ -124,9 +124,9 @@ spec:
     - ReadWriteMany
   cephfs:
     monitors:
-      - 10.98.151.55:6789
+      - 10.10.10.101:6789
       - 10.98.151.56:6789
-      - 10.98.151.65:6789
+      - 10.10.10.102:6789
     path: /cache/marker
     user: admin
     secretRef:
