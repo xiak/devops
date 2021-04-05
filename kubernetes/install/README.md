@@ -11,7 +11,7 @@
 ## 第一步 规划好你的集群策略
 
 ```shell script
-git clone http://cncdavgitlab.ccoe.lab.emc.com/pp/infra.git
+git clone https://github.com/xiak/k8s-infra.git
 ```
 
 在脚本 `install-etc-hosts.sh` 中定义你的集群
