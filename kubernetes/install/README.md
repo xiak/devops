@@ -43,11 +43,11 @@ kubernetes
 | kubernetes worker  | centos 7 min |
 | kubernetes bastion  | centos 7 min |
 
-`3` 台 `k8s` 集群外 `etcd cluster`
-`3` 台由 `haproxy + keepalived` 组成的 `soft loadbalancer`
-`3` 台 `k8s master` 节点, 每台节点上分别包含 `kube-apiserver`, `kube-contorller-manager`, `kube-scheduler` 三个服务
-`1` 至少 `1` 台干活的节点 `k8s worker`
-`1` 台跳板机, 所有人访问集群, 必须通过此跳板机
+- `3` 台 `k8s` 集群外 `etcd cluster`
+- `3` 台由 `haproxy + keepalived` 组成的 `soft loadbalancer`
+- `3` 台 `k8s master` 节点, 每台节点上分别包含 `kube-apiserver`, `kube-contorller-manager`, `kube-scheduler` 三个服务
+- `1` 至少 `1` 台干活的节点 `k8s worker`
+- `1` 台跳板机, 所有人访问集群, 必须通过此跳板机
 
 如果资源紧张, 可以去掉 `soft loadbalancer`, 可以把 `etcd` 和 `kubernetes master` 安装在同一台服务器上, 这种情况本文不作阐述
 
