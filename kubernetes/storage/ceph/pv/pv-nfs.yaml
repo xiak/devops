@@ -8,5 +8,5 @@ spec:
   accessModes:
     - ReadOnlyMany
   nfs:
-    server: qadepot.asl.lab.emc.com
+    server: nfs.xiak.com
     path: "/export"
